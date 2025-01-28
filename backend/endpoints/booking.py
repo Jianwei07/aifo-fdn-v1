@@ -1,12 +1,25 @@
-from fastapi import APIRouter, HTTPException
-from backend.ai.nlu import NLU
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from backend.database.db import conn, cursor
 
 router = APIRouter()
-nlu = NLU()
+
+# Define a Pydantic model for request validation
+class BookingRequest(BaseModel):
+    user: str
+    room_type: str
+    nights: int
 
 @router.post("/book_room")
-async def book_room(user: str, room_type: str, nights: int):
+async def book_room(request: BookingRequest):
+    from backend.ai.nlu import NLU
+    nlu = NLU()
+
+    # Extract data from request
+    user = request.user
+    room_type = request.room_type
+    nights = request.nights
+
     # Check availability
     cursor.execute("SELECT id FROM rooms WHERE type = ? AND available = 1", (room_type,))
     room_id = cursor.fetchone()
